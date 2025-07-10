@@ -1,0 +1,288 @@
+USE [PhoneQA]
+GO
+/****** Object:  Table [dbo].[Agents]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Agents](
+	[AgentID] [int] IDENTITY(1,1) NOT NULL,
+	[AgentName] [nvarchar](255) NOT NULL,
+	[EmailAddress] [nvarchar](255) NULL,
+	[Extension] [nvarchar](50) NULL,
+	[DateCreated] [datetime2](7) NULL,
+	[DateModified] [datetime2](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[AgentID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[AgentName] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[Extension] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalyses]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalyses](
+	[CombinedAnalysisID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AgentID] [int] NOT NULL,
+	[AnalysisDateTime] [datetime2](7) NOT NULL,
+	[AnalysisPeriodNote] [nvarchar](500) NULL,
+	[NumberOfReportsProvided] [int] NULL,
+	[NumberOfReportsSuccessfullyAnalyzed] [int] NULL,
+	[Snapshot_TotalCallsContributing] [int] NULL,
+	[Snapshot_PositiveCount] [int] NULL,
+	[Snapshot_NegativeCount] [int] NULL,
+	[Snapshot_NeutralCount] [int] NULL,
+	[ProcessingDateTime] [datetime2](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CombinedAnalysisID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisCoachingActions]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisCoachingActions](
+	[CoachingActionID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CoachingFocusID] [bigint] NOT NULL,
+	[ActionText] [nvarchar](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CoachingActionID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisCoachingFocus]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisCoachingFocus](
+	[CoachingFocusID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CombinedAnalysisID] [bigint] NOT NULL,
+	[AreaText] [nvarchar](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CoachingFocusID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisDevelopmentAreas]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisDevelopmentAreas](
+	[DevelopmentAreaID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CombinedAnalysisID] [bigint] NOT NULL,
+	[DevelopmentAreaText] [nvarchar](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[DevelopmentAreaID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisParsingIssues]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisParsingIssues](
+	[ParsingIssueID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CombinedAnalysisID] [bigint] NOT NULL,
+	[IssueNote] [nvarchar](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[ParsingIssueID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisQPSnippets]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisQPSnippets](
+	[SnippetID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CombinedQPDetailID] [bigint] NOT NULL,
+	[SnippetType] [varchar](10) NOT NULL,
+	[SnippetText] [nvarchar](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[SnippetID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisQualityPointDetails]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisQualityPointDetails](
+	[CombinedQPDetailID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CombinedAnalysisID] [bigint] NOT NULL,
+	[QualityPointID] [int] NOT NULL,
+	[FindingsSummary_Positive] [int] NULL,
+	[FindingsSummary_Negative] [int] NULL,
+	[FindingsSummary_Neutral] [int] NULL,
+	[TrendObservation] [nvarchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[CombinedQPDetailID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[CombinedAnalysisStrengths]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CombinedAnalysisStrengths](
+	[StrengthID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CombinedAnalysisID] [bigint] NOT NULL,
+	[StrengthText] [nvarchar](max) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[StrengthID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[IndividualCallAnalyses]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[IndividualCallAnalyses](
+	[AnalysisID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AgentID] [int] NULL,
+	[TechDispatcherNameRaw] [nvarchar](max) NULL,
+	[OriginalAudioFileName] [nvarchar](500) NULL,
+	[CallDateTime] [datetime2](7) NULL,
+	[AnalysisDateTime] [datetime2](7) NOT NULL,
+	[CallDuration] [varchar](20) NULL,
+	[ClientName] [nvarchar](max) NULL,
+	[ClientFacilityCompany] [nvarchar](max) NULL,
+	[TicketNumber] [nvarchar](100) NULL,
+	[ClientCallbackNumber] [nvarchar](50) NULL,
+	[TicketStatusType] [nvarchar](max) NULL,
+	[CallSubjectSummary] [nvarchar](max) NULL,
+	[ConcludingRemarks_Positive] [nvarchar](max) NULL,
+	[ConcludingRemarks_Negative] [nvarchar](max) NULL,
+	[ConcludingRemarks_Coaching] [nvarchar](max) NULL,
+	[ProcessingDateTime] [datetime2](7) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[AnalysisID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[IndividualEvaluationItems]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[IndividualEvaluationItems](
+	[EvaluationItemID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AnalysisID] [bigint] NOT NULL,
+	[QualityPointID] [int] NOT NULL,
+	[Finding] [varchar](10) NOT NULL,
+	[ExplanationSnippets] [nvarchar](max) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[EvaluationItemID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[QualityPointsMaster]    Script Date: 7/10/2025 1:46:06 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[QualityPointsMaster](
+	[QualityPointID] [int] IDENTITY(1,1) NOT NULL,
+	[QualityPointText] [nvarchar](max) NOT NULL,
+	[QualityPointTextPrefix]  AS (CONVERT([nvarchar](450),[QualityPointText])) PERSISTED,
+	[Category] [nvarchar](150) NULL,
+	[IsBonus] [bit] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[QualityPointID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UQ_QualityPointTextPrefix] UNIQUE NONCLUSTERED 
+(
+	[QualityPointTextPrefix] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Agents] ADD  DEFAULT (getdate()) FOR [DateCreated]
+GO
+ALTER TABLE [dbo].[Agents] ADD  DEFAULT (getdate()) FOR [DateModified]
+GO
+ALTER TABLE [dbo].[CombinedAnalyses] ADD  DEFAULT (getdate()) FOR [AnalysisDateTime]
+GO
+ALTER TABLE [dbo].[IndividualCallAnalyses] ADD  DEFAULT (getdate()) FOR [AnalysisDateTime]
+GO
+ALTER TABLE [dbo].[QualityPointsMaster] ADD  DEFAULT ((0)) FOR [IsBonus]
+GO
+ALTER TABLE [dbo].[CombinedAnalyses]  WITH CHECK ADD FOREIGN KEY([AgentID])
+REFERENCES [dbo].[Agents] ([AgentID])
+GO
+ALTER TABLE [dbo].[CombinedAnalysisCoachingActions]  WITH CHECK ADD  CONSTRAINT [FK_CombinedAnalysisCoachingActions_CoachingFocus] FOREIGN KEY([CoachingFocusID])
+REFERENCES [dbo].[CombinedAnalysisCoachingFocus] ([CoachingFocusID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[CombinedAnalysisCoachingActions] CHECK CONSTRAINT [FK_CombinedAnalysisCoachingActions_CoachingFocus]
+GO
+ALTER TABLE [dbo].[CombinedAnalysisCoachingFocus]  WITH CHECK ADD  CONSTRAINT [FK_CombinedAnalysisCoachingFocus_CombinedAnalyses] FOREIGN KEY([CombinedAnalysisID])
+REFERENCES [dbo].[CombinedAnalyses] ([CombinedAnalysisID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[CombinedAnalysisCoachingFocus] CHECK CONSTRAINT [FK_CombinedAnalysisCoachingFocus_CombinedAnalyses]
+GO
+ALTER TABLE [dbo].[CombinedAnalysisDevelopmentAreas]  WITH CHECK ADD  CONSTRAINT [FK_CombinedAnalysisDevelopmentAreas_CombinedAnalyses] FOREIGN KEY([CombinedAnalysisID])
+REFERENCES [dbo].[CombinedAnalyses] ([CombinedAnalysisID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[CombinedAnalysisDevelopmentAreas] CHECK CONSTRAINT [FK_CombinedAnalysisDevelopmentAreas_CombinedAnalyses]
+GO
+ALTER TABLE [dbo].[CombinedAnalysisParsingIssues]  WITH CHECK ADD FOREIGN KEY([CombinedAnalysisID])
+REFERENCES [dbo].[CombinedAnalyses] ([CombinedAnalysisID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[CombinedAnalysisQPSnippets]  WITH CHECK ADD FOREIGN KEY([CombinedQPDetailID])
+REFERENCES [dbo].[CombinedAnalysisQualityPointDetails] ([CombinedQPDetailID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[CombinedAnalysisQualityPointDetails]  WITH CHECK ADD FOREIGN KEY([CombinedAnalysisID])
+REFERENCES [dbo].[CombinedAnalyses] ([CombinedAnalysisID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[CombinedAnalysisQualityPointDetails]  WITH CHECK ADD FOREIGN KEY([QualityPointID])
+REFERENCES [dbo].[QualityPointsMaster] ([QualityPointID])
+GO
+ALTER TABLE [dbo].[CombinedAnalysisStrengths]  WITH CHECK ADD FOREIGN KEY([CombinedAnalysisID])
+REFERENCES [dbo].[CombinedAnalyses] ([CombinedAnalysisID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[IndividualCallAnalyses]  WITH CHECK ADD FOREIGN KEY([AgentID])
+REFERENCES [dbo].[Agents] ([AgentID])
+GO
+ALTER TABLE [dbo].[IndividualEvaluationItems]  WITH CHECK ADD FOREIGN KEY([AnalysisID])
+REFERENCES [dbo].[IndividualCallAnalyses] ([AnalysisID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[IndividualEvaluationItems]  WITH CHECK ADD FOREIGN KEY([QualityPointID])
+REFERENCES [dbo].[QualityPointsMaster] ([QualityPointID])
+GO

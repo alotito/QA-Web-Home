@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Reports</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Color styles for the report rows */
+        .score-full { background-color: #e6ffed !important; } /* Light Green */
+        .score-partial { background-color: #fff9e6 !important; } /* Soft Yellow */
+        .score-zero { background-color: #ffeaef !important; } /* Soft Pink */
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">QA Review App</a>
+            <span class="navbar-text">Reports</span>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h1 class="mb-4">View QA Reports</h1>
+        <form id="report-filter-form" class="card p-3 mb-4 bg-light">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="tech-filter" class="form-label">Technician</label>
+                    <select id="tech-filter" class="form-select">
+                        <option value="all" selected>All Technicians</option>
+                        {% for member in members %}
+                            <option value="{{ member.Member_RecID }}">{{ member.Member_Full_Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="profile-filter" class="form-label">Profile</label>
+                    <select id="profile-filter" class="form-select">
+                        <option value="all" selected>All Profiles</option>
+                        {% for profile in profiles %}
+                            <option value="{{ profile.RecID }}">{{ profile.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="start-date" class="form-label">Start Date</label>
+                    <input type="date" id="start-date" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label for="end-date" class="form-label">End Date</label>
+                    <input type="date" id="end-date" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Fetch Report</button>
+                </div>
+            </div>
+        </form>
+
+        <hr>
+        <div id="report-results">
+            <!-- Report data will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('report-filter-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const filters = {
+                technician_id: document.getElementById('tech-filter').value,
+                profile_id: document.getElementById('profile-filter').value,
+                start_date: document.getElementById('start-date').value,
+                end_date: document.getElementById('end-date').value
+            };
+
+            const resultsContainer = document.getElementById('report-results');
+            resultsContainer.innerHTML = '<p class="text-center">Fetching report...</p>';
+
+            fetch('/get_report_data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(filters)
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultsContainer.innerHTML = '';
+                if (data.error) {
+                    resultsContainer.innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+                    return;
+                }
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<div class="alert alert-info">No reviews found matching your criteria.</div>';
+                    return;
+                }
+
+                const reviewsByTech = {};
+                data.forEach(row => {
+                    const techName = row.Member_FullName; // Corrected column name
+                    const reviewId = row.Review_RecID;
+                    if (!reviewsByTech[techName]) {
+                        reviewsByTech[techName] = {};
+                    }
+                    if (!reviewsByTech[techName][reviewId]) {
+                        reviewsByTech[techName][reviewId] = {
+                            header: row,
+                            answers: []
+                        };
+                    }
+                    reviewsByTech[techName][reviewId].answers.push(row);
+                });
+
+                const techAccordion = document.createElement('div');
+                techAccordion.className = 'accordion';
+                techAccordion.id = 'techAccordion';
+
+                let techIndex = 0;
+                for (const techName in reviewsByTech) {
+                    const techReviews = reviewsByTech[techName];
+                    const techItemId = `tech-item-${techIndex}`;
+                    const techCollapseId = `tech-collapse-${techIndex}`;
+
+                    const techAccordionItem = document.createElement('div');
+                    techAccordionItem.className = 'accordion-item';
+                    
+                    techAccordionItem.innerHTML = `
+                        <h2 class="accordion-header" id="${techItemId}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${techCollapseId}" aria-expanded="false" aria-controls="${techCollapseId}">
+                                ${techName} (${Object.keys(techReviews).length} Reviews)
+                            </button>
+                        </h2>
+                        <div id="${techCollapseId}" class="accordion-collapse collapse" aria-labelledby="${techItemId}" data-bs-parent="#techAccordion">
+                            <div class="accordion-body"></div>
+                        </div>
+                    `;
+                    
+                    const innerAccordionBody = techAccordionItem.querySelector('.accordion-body');
+                    const reviewAccordion = document.createElement('div');
+                    reviewAccordion.className = 'accordion';
+                    reviewAccordion.id = `reviewAccordion-${techIndex}`;
+
+                    let reviewIndex = 0;
+                    for (const reviewId in techReviews) {
+                        const review = techReviews[reviewId];
+                        const header = review.header;
+                        const reviewItemId = `review-item-${techIndex}-${reviewIndex}`;
+                        const reviewCollapseId = `review-collapse-${techIndex}-${reviewIndex}`;
+                        
+                        const dateExecuted = new Date(header.Date_Executed).toLocaleDateString();
+                        // Use the new OverallScore column for the header
+                        const score = (header.OverallScore * 100).toFixed(2);
+
+                        const reviewAccordionItem = document.createElement('div');
+                        reviewAccordionItem.className = 'accordion-item';
+
+                        const tableRowsHTML = review.answers.map(answer => {
+                            let rowClass = '';
+                            // Use the new AnswerScore column for color-coding
+                            if (answer.AnswerScore === answer.MaxPoints) {
+                                rowClass = 'score-full';
+                            } else if (answer.AnswerScore === 0) {
+                                rowClass = 'score-zero';
+                            } else {
+                                rowClass = 'score-partial';
+                            }
+                            return `
+                                <tr class="${rowClass}">
+                                    <td>${answer.Section}</td>
+                                    <td>${answer.Quality_Point}</td>
+                                    <td>${answer.Observation || ''}</td>
+                                    <td>${answer.AnswerScore} / ${answer.MaxPoints}</td>
+                                </tr>
+                            `;
+                        }).join('');
+
+                        reviewAccordionItem.innerHTML = `
+                            <h2 class="accordion-header" id="${reviewItemId}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${reviewCollapseId}" aria-expanded="false" aria-controls="${reviewCollapseId}">
+                                    Review from ${dateExecuted} - Ticket: ${header.TicketNbr} - Score: ${score}%
+                                </button>
+                            </h2>
+                            <div id="${reviewCollapseId}" class="accordion-collapse collapse" aria-labelledby="${reviewItemId}" data-bs-parent="#${reviewAccordion.id}">
+                                <div class="card-body">
+                                    <a href="/print_review/${reviewId}" target="_blank" class="btn btn-outline-secondary btn-sm float-end">Print this</a>
+                                    <p><strong>Profile:</strong> ${header.Profile}</p>
+                                    <p><strong>Overall Comment:</strong> ${header.Overall_Commment || 'N/A'}</p>
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr><th>Section</th><th>Question</th><th>Observation</th><th>Score</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            ${tableRowsHTML}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
+                        reviewAccordion.appendChild(reviewAccordionItem);
+                        reviewIndex++;
+                    }
+                    
+                    innerAccordionBody.appendChild(reviewAccordion);
+                    techAccordion.appendChild(techAccordionItem);
+                    techIndex++;
+                }
+                resultsContainer.appendChild(techAccordion);
+                
+                var collapseElementList = [].slice.call(document.querySelectorAll('.accordion-collapse'))
+                var collapseList = collapseElementList.map(function (collapseEl) {
+                  return new bootstrap.Collapse(collapseEl, { toggle: false })
+                })
+
+            })
+            .catch(error => {
+                console.error('Error fetching report:', error);
+                resultsContainer.innerHTML = '<div class="alert alert-danger">A critical error occurred while fetching the report.</div>';
+            });
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

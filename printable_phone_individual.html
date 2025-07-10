@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Printable Individual Call Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { -webkit-print-color-adjust: exact; }
+        }
+        body { font-size: 12pt; }
+        h1, h2, h3, h4 { font-weight: 300; }
+        .report-header {
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .finding-positive { background-color: #e9f7ef !important; }
+        .finding-negative { background-color: #fbe9e7 !important; }
+        .finding-neutral { background-color: #e3f2fd !important; }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="container mt-4">
+        <div class="report-header text-center">
+            <h1>Phone QA - Individual Call Report</h1>
+            <p class="lead text-muted">Generated on: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+
+        <h4>Agent: {{ details.header.AgentName }}</h4>
+        {% if details.header.CallDateTime %}
+            <h5>Call Date: {{ details.header.CallDateTime.strftime('%Y-%m-%d %I:%M %p') }}</h5>
+        {% else %}
+            <h5>Call Date: N/A</h5>
+        {% endif %}
+        <p><strong>Subject:</strong> {{ details.header.CallSubjectSummary }}</p>
+        <p><strong>Original File:</strong> <span class="text-muted">{{ details.header.OriginalAudioFileName or 'N/A' }}</span></p>
+        <hr>
+
+        <h4 class="mt-4">Detailed Findings</h4>
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Finding</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for finding in details.findings %}
+                    {% set row_class = 'finding-neutral' %}
+                    {% if finding.FindingType and finding.FindingType.lower() == 'positive' %}{% set row_class = 'finding-positive' %}{% endif %}
+                    {% if finding.FindingType and finding.FindingType.lower() == 'negative' %}{% set row_class = 'finding-negative' %}{% endif %}
+                <tr class="{{ row_class }}">
+                    <td>{{ finding.FindingCategory }}</td>
+                    <td>{{ finding.FindingText }}</td>
+                    <td>{{ finding.FindingType }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No detailed findings were recorded for this call.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</body>
+</html>

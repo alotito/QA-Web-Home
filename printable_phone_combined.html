@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Printable Combined Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @media print {
+            .no-print { display: none; }
+            body { -webkit-print-color-adjust: exact; }
+        }
+        body { font-size: 12pt; }
+        h1, h2, h3, h4 { font-weight: 300; }
+        .report-header {
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .summary-section {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body onload="window.print()">
+    <div class="container mt-4">
+        <div class="report-header text-center">
+            <h1>Phone QA - Combined Analysis Report</h1>
+            <p class="lead text-muted">Generated on: {{ now().strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+
+        <h3>Agent: {{ details.header.AgentName }}</h3>
+        <h4>Analysis Date: {{ details.header.AnalysisDateTime.strftime('%Y-%m-%d %I:%M %p') }}</h4>
+        <hr>
+
+        <div class="row mt-4">
+            <div class="col-6 summary-section">
+                <h4>Strengths</h4>
+                {% if details.strengths %}
+                    <ul>
+                        {% for item in details.strengths %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">None noted.</p>
+                {% endif %}
+            </div>
+            <div class="col-6 summary-section">
+                <h4>Areas for Development</h4>
+                {% if details.development_areas %}
+                    <ul>
+                        {% for item in details.development_areas %}
+                            <li>{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted">None noted.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <h4 class="mt-5">Analyzed Calls</h4>
+        <table class="table table-sm table-bordered">
+            <thead>
+                <tr>
+                    <th>Call Date & Time</th>
+                    <th>Subject</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for call in details.calls %}
+                <tr>
+                    <td>
+                        {% if call.CallDateTime %}
+                            {{ call.CallDateTime.strftime('%Y-%m-%d %I:%M %p') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ call.CallSubjectSummary }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="2" class="text-center text-muted">No calls were analyzed for this report.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+</body>
+</html>

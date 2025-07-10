@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Deletion Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .container { max-width: 960px; }
+        .review-card { transition: all 0.3s ease-in-out; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-danger">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">DANGER ZONE - Review Deletion Tool</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="alert alert-warning" role="alert">
+            <h4 class="alert-heading">Warning!</h4>
+            <p>This is a powerful tool. Deleting a review is permanent and cannot be undone. Please be absolutely sure before deleting any records.</p>
+        </div>
+
+        <div class="card p-3 mb-4">
+            <h5 class="card-title">Search for Reviews to Delete</h5>
+            <form id="search-form">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="technician-filter" class="form-label">Technician</label>
+                        <select id="technician-filter" class="form-select">
+                            <option value="all" selected>All Technicians</option>
+                            {% for member in members %}
+                                <option value="{{ member.Member_RecID }}">{{ member.Member_Full_Name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="start-date" class="form-label">Start Date</label>
+                        <input type="date" id="start-date" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end-date" class="form-label">End Date</label>
+                        <input type="date" id="end-date" class="form-control">
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">Find</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <hr>
+        <h3 class="mt-4">Search Results</h3>
+        <div id="results-container">
+            <p class="text-muted">Search results will appear here.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('search-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.innerHTML = '<p class="text-center">Searching...</p>';
+
+            const filters = {
+                technician_id: document.getElementById('technician-filter').value,
+                start_date: document.getElementById('start-date').value,
+                end_date: document.getElementById('end-date').value,
+                profile_id: 'all' // We don't need to filter by profile for deletion
+            };
+
+            fetch('/api/search_reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(filters)
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultsContainer.innerHTML = '';
+                if (data.error) {
+                    resultsContainer.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                    return;
+                }
+                if (data.length === 0) {
+                    resultsContainer.innerHTML = '<p class="text-muted">No reviews found matching your criteria.</p>';
+                    return;
+                }
+                
+                // Group reviews by their main ID to show only one card per review
+                const uniqueReviews = {};
+                data.forEach(item => {
+                    if (!uniqueReviews[item.Review_RecID]) {
+                        uniqueReviews[item.Review_RecID] = {
+                            id: item.Review_RecID,
+                            date: item.Date_Executed,
+                            tech: item.Member_FullName,
+                            ticket: item.TicketNbr,
+                            score: item.Score
+                        };
+                    }
+                });
+
+                let html = '';
+                for (const id in uniqueReviews) {
+                    const review = uniqueReviews[id];
+                    const scorePercent = (review.score * 100).toFixed(1);
+                    html += `
+                        <div class="card mb-3 review-card" id="review-${review.id}">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5 class="card-title">Technician: ${review.tech}</h5>
+                                        <h6 class="card-subtitle mb-2 text-muted">Ticket #: ${review.ticket || 'N/A'}</h6>
+                                        <p class="card-text">
+                                            Reviewed on: ${new Date(review.date).toLocaleString()} <br>
+                                            Final Score: ${scorePercent}%
+                                        </p>
+                                    </div>
+                                    <button class="btn btn-danger delete-btn" data-review-id="${review.id}" data-tech-name="${review.tech}" data-ticket-nbr="${review.ticket}">
+                                        Delete Permanently
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                resultsContainer.innerHTML = html;
+            })
+            .catch(err => {
+                resultsContainer.innerHTML = `<div class="alert alert-danger">A network error occurred: ${err}</div>`;
+            });
+        });
+
+        document.getElementById('results-container').addEventListener('click', function(event) {
+            if (event.target.classList.contains('delete-btn')) {
+                const button = event.target;
+                const reviewId = button.dataset.reviewId;
+                const techName = button.dataset.techName;
+                const ticketNbr = button.dataset.ticketNbr;
+
+                const confirmationMessage = `Are you absolutely sure you want to delete the review for:
+                
+Technician: ${techName}
+Ticket: ${ticketNbr || 'N/A'}
+Review ID: ${reviewId}
+
+This action cannot be undone.`;
+
+                if (confirm(confirmationMessage)) {
+                    // Proceed with deletion
+                    fetch('/api/delete_review', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ review_id: reviewId })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Visually remove the card
+                            const cardToRemove = document.getElementById(`review-${reviewId}`);
+                            cardToRemove.style.opacity = '0';
+                            cardToRemove.style.transform = 'scale(0.9)';
+                            setTimeout(() => cardToRemove.remove(), 300);
+                            alert(data.message); // Optional success message
+                        } else {
+                            alert(`Deletion failed: ${data.message}`);
+                        }
+                    })
+                    .catch(err => {
+                        alert(`An error occurred during deletion: ${err}`);
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>

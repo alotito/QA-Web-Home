@@ -1,0 +1,25 @@
+SELECT [Member_RecID]
+      ,[Member_ID]
+      ,[First_Name]
+      ,[Last_Name]
+      ,[Title]
+      ,[Member_Type_Desc]
+      ,[Email_Address]
+  	,[PhoneNbr]
+	  ,[PhoneNbr_Ext]
+      ,[Default_Phone]
+      ,[Default_Email]
+      ,[Inactive_Flag]
+      ,[Date_Inactive]
+      ,[Reports_To]
+      ,[Work_Role]
+      ,[Work_Type]
+      ,[Daily_Capacity]
+      ,[Board_Name]
+      ,[Last_Update]
+      ,[Member_Full_Name]
+  FROM [cwwebapp_globaltsllc].[dbo].[v_rpt_Member]
+  where [Member_Type_Desc] not in ('C-Suite','IT Director','SubContractor') 
+		and [Member_Type_Desc] not like '%manager%'
+		and Inactive_Flag = '0'
+		and [Member_Type_Desc] in ( 'First Call Tech', 'Jr. Sys Admin', 'Sys Admin', 'Dispatcher')

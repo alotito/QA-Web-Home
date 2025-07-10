@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Print Review - {{ header.TicketNbr }}</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #666; text-align: left; padding: 8px; font-size: 12px; }
+        th { background-color: #f2f2f2; }
+        h1, h2, p { margin: 5px 0; }
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <button class="no-print" onclick="window.print()">Print this page</button>
+    <hr class="no-print">
+
+    <h1>QA Review Report</h1>
+    <p><strong>Technician:</strong> {{ header.Member_FullName }}</p>
+    <p><strong>Ticket Number:</strong> {{ header.TicketNbr }}</p>
+    <p><strong>Profile:</strong> {{ header.Profile }}</p>
+    <p><strong>Date Executed:</strong> {{ header.Date_Executed.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p><strong>Final Score:</strong> {{ (header.OverallScore * 100)|round(2) }}%</p>
+    <p><strong>Overall Comment:</strong> {{ header.Overall_Commment or 'N/A' }}</p>
+
+    <h2>Review Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Section</th>
+                <th>Question</th>
+                <th>Observation</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for answer in answers %}
+            <tr>
+                <td>{{ answer.Section }}</td>
+                <td>{{ answer.Quality_Point }}</td>
+                <td>{{ answer.Observation or '' }}</td>
+                <td>{{ answer.AnswerScore }} / {{ answer.MaxPoints }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Automatically trigger the print dialog when the page loads
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>
