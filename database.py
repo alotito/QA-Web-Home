@@ -25,7 +25,7 @@ def get_db_connection():
         raise
 
 def get_cw_db_connection():
-    """Establishes a read-only connection to the ConnectWise SQL Server database."""
+    """Establishes a connection to the ConnectWise SQL Server database."""
     server = get_config('ConnectWiseDB', 'Server')
     database = get_config('ConnectWiseDB', 'DatabaseName')
     username = get_config('ConnectWiseDB', 'User')
@@ -46,7 +46,7 @@ def get_cw_db_connection():
         raise
         
 def get_active_profiles():
-    """Fetches all active QA profiles from the local QA database."""
+    """Fetches all active QA profiles as a list of dictionaries."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT RecID, Name FROM dbo.ProfileHeader WHERE ActiveFlag = 1 ORDER BY Name")
@@ -60,7 +60,7 @@ def get_active_profiles():
 def get_all_members():
     """
     Fetches all active, non-managerial technicians directly from the
-    ConnectWise database (v_rpt_Member), which serves as the single source of truth.
+    ConnectWise database view (v_rpt_Member).
     """
     conn = get_cw_db_connection()
     cursor = conn.cursor()
@@ -83,7 +83,7 @@ def get_all_members():
     return members
 
 def get_profile_questions(profile_id):
-    """Fetches all questions for a given profile ID from the local QA database."""
+    """Fetches all questions for a given profile ID using the summary view."""
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -103,7 +103,9 @@ def get_profile_questions(profile_id):
 
 def _ensure_member_exists_in_qa_db(member_rec_id, member_full_name):
     """
-    Helper function to sync a member from ConnectWise to the local QA database.
+    Ensures a given member exists in the GTS-QADB dbo.Members table.
+    This is a helper function to bridge the gap between ConnectWise and the QA database,
+    allowing foreign key constraints and views to continue working.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -120,6 +122,7 @@ def _ensure_member_exists_in_qa_db(member_rec_id, member_full_name):
         conn.commit()
     except Exception as e:
         conn.rollback()
+        print(f"CRITICAL: Could not sync member {member_rec_id} to QA DB. Error: {e}")
         raise
     finally:
         conn.close()
@@ -149,40 +152,54 @@ def save_review_to_db(review_id, date_executed, executed_by, member_rec_id, memb
         conn.close()
 
 def get_filtered_reviews(filters):
-    """Fetches review data based on a dictionary of filters."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    query = "SELECT * FROM dbo.TheReviews WHERE 1=1"
-    params = []
+    """
+    Fetches review data based on a dictionary of filters.
+    Includes robust diagnostic printing to debug any type of error.
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        query = "SELECT * FROM dbo.TheReviews WHERE 1=1"
+        params = []
 
-    if filters.get('technician_id') and filters['technician_id'] != 'all':
-        query += " AND Member_Recid = ?"
-        params.append(int(filters['technician_id']))
-    
-    if filters.get('profile_id') and filters['profile_id'] != 'all':
-        query += " AND Profile_ID = ?"
-        params.append(int(filters['profile_id']))
+        if filters.get('technician_id') and filters['technician_id'] != 'all':
+            query += " AND Member_Recid = ?"
+            params.append(int(filters['technician_id']))
+        
+        if filters.get('profile_id') and filters['profile_id'] != 'all':
+            query += " AND Profile_ID = ?"
+            params.append(int(filters['profile_id']))
 
-    if filters.get('start_date') and filters['start_date'] != '':
-        query += " AND Date_Executed >= ?"
-        params.append(filters['start_date'])
+        if filters.get('start_date') and filters['start_date'] != '':
+            query += " AND Date_Executed >= ?"
+            params.append(filters['start_date'])
 
-    if filters.get('end_date') and filters['end_date'] != '':
-        end_date = datetime.strptime(filters['end_date'], '%Y-%m-%d').date()
-        next_day = end_date + timedelta(days=1)
-        query += " AND Date_Executed < ?"
-        params.append(str(next_day))
+        if filters.get('end_date') and filters['end_date'] != '':
+            end_date = datetime.strptime(filters['end_date'], '%Y-%m-%d').date()
+            next_day = end_date + timedelta(days=1)
+            query += " AND Date_Executed < ?"
+            params.append(str(next_day))
 
-    query += " ORDER BY Date_Executed DESC, Member_FullName, SortOrder"
-    
-    cursor.execute(query, params)
-    
-    columns = [column[0] for column in cursor.description]
-    results = [dict(zip(columns, row)) for row in cursor.fetchall()]
-    
-    conn.close()
-    return results
+        query += " ORDER BY Date_Executed DESC, Member_FullName, SortOrder"
+        
+        print("\n--- DEBUG: EXECUTING TICKET REPORT QUERY ---")
+        print(f"Generated SQL: {query}")
+        print(f"Parameters: {params}")
+        
+        cursor.execute(query, params)
+        columns = [column[0] for column in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        print("--- DEBUG: Ticket query executed successfully. ---")
+        conn.close()
+        return results
+        
+    except Exception as ex:
+        print(f"--- !!! DATABASE ERROR IN database.py !!! ---")
+        print(f"Error Type: {type(ex).__name__}")
+        print(f"Error Details: {ex}")
+        print("--- END DATABASE ERROR ---")
+        raise
 
 def get_review_by_id(review_id):
     """Fetches all data for a single review by its GUID from the canonical view."""
@@ -222,23 +239,3 @@ def get_tech_review_worklist():
     worklist.sort(key=lambda x: (x['LastReviewDate'] is None, x['LastReviewDate'], x['Member_Full_Name']))
 
     return worklist
-
-def delete_review_by_id(review_id):
-    """
-    Deletes a review from the database.
-    This assumes that ON DELETE CASCADE is enabled on the foreign key
-    in the dbo.Answers table, which will automatically delete child records.
-    """
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("DELETE FROM dbo.Reviews WHERE Review_RecID = ?", review_id)
-        conn.commit()
-        # Check if any rows were affected to confirm deletion
-        return cursor.rowcount > 0
-    except Exception as e:
-        conn.rollback()
-        print(f"ERROR: Could not delete review {review_id}. Reason: {e}")
-        raise
-    finally:
-        conn.close()

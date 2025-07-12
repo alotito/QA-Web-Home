@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Tools</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .tool-card {
+            min-height: 350px;
+        }
+        .results-container {
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: .25rem;
+            padding: 1rem;
+            min-height: 150px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">QA Review App - Home</a>
+            <span class="navbar-text">File Tools</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h1 class="mb-4">Local File Processor</h1>
+        <p class="lead">Use these tools to process local audio files for transcription and QA analysis.</p>
+
+        <div class="row g-4">
+            <!-- Transcribe Tool -->
+            <div class="col-md-6">
+                <div class="card h-100 tool-card">
+                    <div class="card-header">
+                        <h4>1. Transcribe Audio File</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Select a local audio file (.wav, .mp3, etc.) to generate a timestamped SRT transcript.</p>
+                        <div class="mb-3">
+                            <label for="audio-file-input-transcribe" class="form-label">Select Audio File</label>
+                            <input class="form-control" type="file" id="audio-file-input-transcribe" accept="audio/*">
+                        </div>
+                        <button id="transcribe-btn" class="btn btn-primary">Transcribe</button>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title">Transcription Result (SRT)</h5>
+                            <button id="save-transcript-btn" class="btn btn-sm btn-outline-secondary d-none">Save Transcript</button>
+                        </div>
+                        <div id="transcribe-results" class="results-container">
+                            <span class="text-muted">Transcription will appear here...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QA Tool -->
+            <div class="col-md-6">
+                <div class="card h-100 tool-card">
+                    <div class="card-header">
+                        <h4>2. QA an Audio File</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>Select a local audio file to send it directly to the Gemini model for QA analysis.</p>
+                        <div class="mb-3">
+                            <label for="audio-file-input-qa" class="form-label">Select Audio File</label>
+                            <input class="form-control" type="file" id="audio-file-input-qa" accept="audio/*">
+                        </div>
+                        <button id="qa-btn" class="btn btn-success">Run QA</button>
+                    </div>
+                    <div class="card-footer">
+                        <h5 class="card-title">QA Analysis Status</h5>
+                        <div id="qa-results" class="results-container">
+                             <span class="text-muted">QA analysis results will open in a new tab.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const saveTranscriptBtn = document.getElementById('save-transcript-btn');
+
+    // --- Transcribe Button Logic ---
+    document.getElementById('transcribe-btn').addEventListener('click', function() {
+        const fileInput = document.getElementById('audio-file-input-transcribe');
+        const file = fileInput.files[0];
+        const resultsContainer = document.getElementById('transcribe-results');
+        
+        saveTranscriptBtn.classList.add('d-none');
+
+        if (!file) {
+            resultsContainer.innerHTML = '<span class="text-danger">Please select a file first.</span>';
+            return;
+        }
+
+        resultsContainer.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Transcribing, please wait...';
+        
+        const formData = new FormData();
+        formData.append('audio_file', file);
+
+        fetch('/api/transcribe_upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                resultsContainer.innerText = `Error: ${data.error}`;
+            } else {
+                resultsContainer.innerText = data.transcript;
+                saveTranscriptBtn.classList.remove('d-none');
+            }
+        })
+        .catch(err => {
+            resultsContainer.innerText = `A network or server error occurred.`;
+        });
+    });
+
+    // --- Save Transcript Button Logic ---
+    saveTranscriptBtn.addEventListener('click', function() {
+        const transcriptText = document.getElementById('transcribe-results').innerText;
+        const originalFileName = document.getElementById('audio-file-input-transcribe').files[0].name;
+        const baseFileName = originalFileName.split('.').slice(0, -1).join('.');
+        const srtFileName = `${baseFileName}.srt`;
+
+        if (!transcriptText || transcriptText.startsWith('Error:')) {
+            alert("No valid transcript to save.");
+            return;
+        }
+
+        const blob = new Blob([transcriptText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = srtFileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+    });
+
+    // --- QA Button Logic (Rewritten) ---
+    document.getElementById('qa-btn').addEventListener('click', function() {
+        const fileInput = document.getElementById('audio-file-input-qa');
+        const file = fileInput.files[0];
+        const qaResultsContainer = document.getElementById('qa-results');
+
+        if (!file) {
+            qaResultsContainer.innerHTML = '<span class="text-danger">Please select a file to QA.</span>';
+            return;
+        }
+
+        qaResultsContainer.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Analyzing audio, please wait...';
+
+        const formData = new FormData();
+        formData.append('audio_file', file);
+
+        fetch('/api/qa_audio_upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                qaResultsContainer.innerText = `Error: ${data.error}`;
+            } else {
+                // On success, open the new report page and reset the status message
+                window.open('/print_manual_qa', '_blank');
+                qaResultsContainer.innerHTML = `<span class="text-success">Success! Your report has opened in a new tab.</span>`;
+            }
+        })
+        .catch(err => {
+            qaResultsContainer.innerText = `A network or server error occurred.`;
+        });
+    });
+</script>
+</body>
+</html>

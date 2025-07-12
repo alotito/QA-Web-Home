@@ -69,59 +69,74 @@ def get_all_phone_agents():
     return agents
 
 def get_combined_analyses_by_filter(filters):
-    """Fetches the main combined analysis reports based on filters."""
-    conn = get_phone_qa_db_connection()
-    cursor = conn.cursor()
-    
-    query = """
-        SELECT 
-            ca.CombinedAnalysisID,
-            ca.AgentID,
-            ag.AgentName,
-            ca.AnalysisDateTime,
-            ca.AnalysisPeriodNote
-        FROM 
-            dbo.CombinedAnalyses ca
-        JOIN 
-            dbo.Agents ag ON ca.AgentID = ag.AgentID
-        WHERE 1=1
     """
-    params = []
+    Fetches the main combined analysis reports based on filters.
+    Includes diagnostic printing to debug any type of error.
+    """
+    try:
+        conn = get_phone_qa_db_connection()
+        cursor = conn.cursor()
+        
+        query = """
+            SELECT 
+                ca.CombinedAnalysisID,
+                ca.AgentID,
+                ag.AgentName,
+                ca.AnalysisDateTime,
+                ca.AnalysisPeriodNote
+            FROM 
+                dbo.CombinedAnalyses ca
+            JOIN 
+                dbo.Agents ag ON ca.AgentID = ag.AgentID
+            WHERE 1=1
+        """
+        params = []
 
-    if filters.get('agent_id') and filters['agent_id'] != 'all':
-        query += " AND ca.AgentID = ?"
-        params.append(int(filters['agent_id']))
+        if filters.get('agent_id') and filters['agent_id'] != 'all':
+            query += " AND ca.AgentID = ?"
+            params.append(int(filters['agent_id']))
 
-    if filters.get('start_date') and filters['start_date'] != '':
-        query += " AND ca.AnalysisDateTime >= ?"
-        params.append(filters['start_date'])
+        if filters.get('start_date') and filters['start_date'] != '':
+            query += " AND ca.AnalysisDateTime >= ?"
+            params.append(filters['start_date'])
 
-    if filters.get('end_date') and filters['end_date'] != '':
-        end_date = datetime.strptime(filters['end_date'], '%Y-%m-%d').date()
-        next_day = end_date + timedelta(days=1)
-        query += " AND ca.AnalysisDateTime < ?"
-        params.append(str(next_day))
+        if filters.get('end_date') and filters['end_date'] != '':
+            end_date = datetime.strptime(filters['end_date'], '%Y-%m-%d').date()
+            next_day = end_date + timedelta(days=1)
+            query += " AND ca.AnalysisDateTime < ?"
+            params.append(str(next_day))
 
-    query += " ORDER BY ag.AgentName, ca.AnalysisDateTime DESC"
-    
-    cursor.execute(query, params)
-    
-    columns = [column[0] for column in cursor.description]
-    results = [dict(zip(columns, row)) for row in cursor.fetchall()]
-    
-    conn.close()
-    return results
+        query += " ORDER BY ag.AgentName, ca.AnalysisDateTime DESC"
+        
+        print("\n--- DEBUG: EXECUTING PHONE REPORT LIST QUERY ---")
+        print(f"Generated SQL: {query}")
+        print(f"Parameters: {params}")
+        
+        cursor.execute(query, params)
+        columns = [column[0] for column in cursor.description]
+        results = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        conn.close()
+        print("--- DEBUG: Phone report list query executed successfully. ---")
+        return results
+    except Exception as ex:
+        print(f"--- !!! DATABASE ERROR IN phone_qa_db.py (get_combined_analyses_by_filter) !!! ---")
+        print(f"Error Type: {type(ex).__name__}")
+        print(f"Error Details: {ex}")
+        print("--- END DATABASE ERROR ---")
+        raise
 
 def get_details_for_combined_analysis(analysis_id):
     """
-    Fetches all details for a combined analysis, including strengths,
-    development areas, and the list of individual calls.
+    Fetches all details for a combined analysis.
+    Includes robust diagnostic printing.
     """
-    conn = get_phone_qa_db_connection()
-    cursor = conn.cursor()
-    details = {}
-
     try:
+        conn = get_phone_qa_db_connection()
+        cursor = conn.cursor()
+        details = {}
+        
+        print(f"\n--- DEBUG: Fetching details for combined analysis ID: {analysis_id} ---")
+
         header_query = "SELECT ca.AgentID, ag.AgentName, ca.ProcessingDateTime, ca.AnalysisDateTime FROM dbo.CombinedAnalyses ca JOIN dbo.Agents ag ON ca.AgentID = ag.AgentID WHERE ca.CombinedAnalysisID = ?"
         cursor.execute(header_query, analysis_id)
         header_row = cursor.fetchone()
@@ -156,19 +171,26 @@ def get_details_for_combined_analysis(analysis_id):
         calls = [dict(zip(columns, row)) for row in cursor.fetchall()]
         details['calls'] = calls
         
-        return details
-
-    finally:
         conn.close()
+        return details
+    except Exception as ex:
+        print(f"--- !!! DATABASE ERROR IN phone_qa_db.py (get_details_for_combined_analysis) !!! ---")
+        print(f"Error Type: {type(ex).__name__}")
+        print(f"Error Details: {ex}")
+        print("--- END DATABASE ERROR ---")
+        raise
 
 def get_individual_call_details(analysis_id):
     """
     Fetches all details for a single individual call analysis using the corrected schema.
     """
-    conn = get_phone_qa_db_connection()
-    cursor = conn.cursor()
-    details = {}
     try:
+        conn = get_phone_qa_db_connection()
+        cursor = conn.cursor()
+        details = {}
+        
+        print(f"\n--- DEBUG: Fetching details for INDIVIDUAL analysis ID: {analysis_id} ---")
+        
         header_query = """
             SELECT ica.AnalysisID, ica.AgentID, ag.AgentName, ica.OriginalAudioFileName, ica.CallDateTime, ica.CallSubjectSummary
             FROM dbo.IndividualCallAnalyses ica
@@ -183,6 +205,7 @@ def get_individual_call_details(analysis_id):
         
         columns = [column[0] for column in cursor.description]
         details['header'] = dict(zip(columns, header_row))
+        print("--- DEBUG: Individual header found. ---")
 
         details_query = """
             SELECT 
@@ -200,15 +223,21 @@ def get_individual_call_details(analysis_id):
             ORDER BY 
                 qpm.Category;
         """
+        print(f"--- DEBUG: Executing individual findings query... ---")
         cursor.execute(details_query, analysis_id)
         columns = [column[0] for column in cursor.description]
         details['findings'] = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        print(f"--- DEBUG: Found {len(details['findings'])} individual findings. ---")
 
-        return details
-    finally:
         conn.close()
+        return details
+    except Exception as ex:
+        print(f"--- !!! DATABASE ERROR IN get_individual_call_details !!! ---")
+        print(f"Error Type: {type(ex).__name__}")
+        print(f"Error Details: {ex}")
+        print("--- END DATABASE ERROR ---")
+        raise
 
-# --- NEW FUNCTION ADDED FOR PRINTING ---
 def get_agent_by_id(agent_id):
     """Fetches a single agent's name by their ID."""
     conn = get_phone_qa_db_connection()
