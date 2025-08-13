@@ -1,176 +1,110 @@
-QA Review Application
-Version: 2.0.0
-Author: Albert L., Service Delivery Manager, Global Tech Solutions LLC
+Of course. A good README file is essential for any project.
 
-1. Overview
-The QA Review Application is a comprehensive, enterprise-grade web platform designed to centralize and enhance the quality assurance processes at Global Tech Solutions. Built with Python and the Flask framework, this application provides a suite of tools for both manual and automated QA tasks, leveraging local AI models for transcription and diarization, and cloud AI for analysis.
+While you requested a `.doc` file, the standard for code repositories like GitHub is a Markdown file named **`README.md`**. It's a plain text format that renders beautifully on sites like GitHub, making it easy to read and maintain. I will generate the content in this standard format for you.
 
-The system is built on a multi-database architecture, connecting to the local GTS-QADB for ticket review data, the PhoneQA database for historical call analysis, and the live cwwebapp_globaltsllc (ConnectWise) database, which serves as the single source of truth for all technician and agent information.
+Here is a comprehensive `README.md` for your project, created by reviewing all the files and information you've provided.
 
-2. Core Modules & Functionality
-The application is composed of several distinct modules, each with a specific purpose:
+-----
 
-File / Module
+# QA & Performance Analysis Hub
 
-Function
+An integrated Flask-based web application designed for quality assurance and performance analysis in an IT support environment. This hub provides a suite of tools for reviewing help desk tickets, analyzing technician performance with detailed metrics, and leveraging AI for documentation and call quality analysis.
 
-app.py
+## Screenshots
 
-The main Flask web application. It serves all user-facing pages and API endpoints for the Ticket QA, Phone QA, and File Tools modules.
+| Landing Hub | Performance Scorecard | Review Worklist |
+| :---: | :---: | :---: |
+|  |  |  |
 
-database.py
+## Features
 
-Handles all database logic for the Ticket QA System. It connects to both the local GTS-QADB and the cwwebapp_globaltsllc database to fetch data and save reviews.
+  * **Central Hub**: A main landing page providing access to all tools.
+  * **Ticket QA System**:
+      * Conduct new, detailed quality reviews on ConnectWise tickets using customizable profiles.
+      * View historical ticket QA reports with dynamic filtering.
+      * Find and edit previously submitted reviews.
+  * **QA Review Worklist**: A prioritized list showing which technicians are due for a review based on their last review date.
+  * **Performance Scorecard**:
+      * View detailed, aggregated statistics for technicians, including hours, tickets, and call data.
+      * Select dynamic timeframes (monthly, weekly, daily) to analyze performance trends.
+      * Interactive chart to plot and compare different metrics over time.
+      * Download table data as a CSV file.
+  * **AI-Powered Analysis**:
+      * Generate a natural language performance summary and compliance check on the scorecard page.
+      * Run in-depth documentation quality analysis on a strategic sample of a technician's tickets.
+  * **Phone System Tools**:
+      * View reports on AI-driven phone call QA.
+      * Process local audio files for transcription or on-demand QA analysis.
 
-phone_qa_db.py
+## Technology Stack
 
-Manages all database interactions for the Automated Phone QA System, connecting to the PhoneQA database to retrieve historical analysis reports.
+  * **Backend**: Python, Flask
+  * **Database**: Microsoft SQL Server (connects to multiple databases for ConnectWise, Ticket QA, and Phone Call data)
+  * **Frontend**: HTML, Bootstrap 5, JavaScript, Chart.js
+  * **AI & Machine Learning**:
+      * **LLM Service**: Ollama for local model hosting
+      * **Transcription**: OpenAI Whisper
+      * **Speaker Diarization**: Pyannote Audio
+      * **Cloud AI**: Google Gemini (for on-demand audio file QA)
 
-call_processor.py
+-----
 
-The core AI engine. It handles the complex tasks of audio transcription and speaker diarization using local, GPU-accelerated models (whisper, pyannote.audio) and sends audio to the Google Gemini API for analysis.
+## Setup and Installation
 
-config_manager.py
+### Prerequisites
 
-A simple, robust utility for reading all settings (database credentials, API keys, paths) from the central Config.ini file.
+  * Python 3.x
+  * Pip (Python package installer)
+  * Microsoft ODBC Driver for SQL Server
+  * [Ollama](https://ollama.com/) installed and running with the required models pulled (e.g., `ollama pull llama3.1:8b`)
 
-email_service.py
+### Installation Steps
 
-Generates and sends HTML-formatted ticket review emails via an SMTP server.
+1.  Clone the repository to your local machine or server.
+2.  Navigate to the project directory in your terminal.
+3.  Install the required Python packages:
+    ```sh
+    pip install -r requirements.txt
+    ```
 
-the_deleter.py
+### Configuration
 
-A separate, standalone Flask application for administrative use. It provides a safe interface to delete test data or erroneous reviews without exposing this functionality in the main application.
+All application settings are managed in the **`Config.ini`** file. You must update this file with your specific database credentials, server paths, and AI model names.
 
-3. Features
-Ticket QA System
-Live Technician Data: Pulls the list of all active technicians directly from the ConnectWise database, ensuring the list is always up-to-date.
+  * **`[Database]`**: Connection details for your primary QA database (where ticket reviews are stored).
+  * **`[ConnectWiseDB]`**: Connection details for your ConnectWise database, used for fetching member and ticket data.
+  * **`[CallDataDB]`**: Connection details for your 3CX phone system database (`GlobalTechSolutions3CXData`).
+  * **`[PhoneQADatabase]`**: Connection details for the separate Phone Call QA database.
+  * **`[Email]`**: SMTP server settings for sending email reports.
+  * **`[ScoreCardAI]`**: Settings for the scorecard's AI analysis, including the Ollama host URL and the model name.
+  * **`[TicketAnalysisAI]`**: Settings for the standalone ticket documentation analyzer, including model name and prompt paths.
+  * **`[API]`**: Contains the Google API key for the on-demand audio file QA.
+  * **`[Prompts]`**: File paths for the various AI prompt templates used by the application.
 
-Dynamic Review Forms: Loads different sets of questions (QA Profiles) based on the type of ticket being reviewed.
+-----
 
-Automated Email Reports: Generates and sends detailed HTML-formatted reports of the review.
+## Running the Application
 
-Historical Reporting & Worklist: Provides tools to view past reviews and see which technicians are due for a review.
+### Development
 
-Automated Phone QA System
-Drill-Down Reporting: View high-level analysis reports for each agent, drill down into the specific calls that contributed to the summary, and then drill down again to see the detailed findings for each individual call.
+For local development and testing, you can run the application directly from the command line:
 
-Printable Reports: Generates clean, printer-friendly versions of both combined and individual call reports.
-
-On-Demand File Tools
-Local File Transcription: Allows a user to upload a local audio file (.wav, .mp3, etc.) and receive a complete, speaker-diarized transcript in SRT format.
-
-Local File QA: Allows a user to upload a local audio file to be sent directly to the Google Gemini model for a full QA analysis, with the results formatted into a printable HTML report.
-
-4. System & Software Dependencies
-Properly configuring the server environment is critical for this application to function, especially when deploying under IIS.
-
-a) Python & Libraries
-The application requires Python 3.x and the libraries listed in requirements.txt.
-
-# requirements.txt
-Flask
-pyodbc
-openai-whisper
-google-generativeai
-ffmpeg-python
-pyannote.audio
-torch
-torchaudio
-soundfile
-
-b) NVIDIA GPU & CUDA (Highly Recommended)
-For acceptable performance of the transcription and diarization features, the server must have an NVIDIA GPU.
-
-The appropriate NVIDIA drivers must be installed.
-
-The NVIDIA CUDA Toolkit must be installed. The version should be determined by running nvidia-smi on the server.
-
-The torch and torchaudio Python libraries must be installed using the specific command from the PyTorch website that matches the server's CUDA version to enable GPU acceleration.
-
-c) FFmpeg
-The ffmpeg command-line tool is a critical dependency for the audio processing libraries.
-
-It must be downloaded from ffmpeg.org and installed on the server.
-
-The location of the ffmpeg.exe file (usually in a bin folder) must be added to the system's PATH environment variable.
-
-d) Microsoft C++ Build Tools
-To install the pyannote.audio library and its dependencies on Windows, the Microsoft C++ Build Tools are required.
-
-They can be downloaded from the Visual Studio website.
-
-During installation, the "Desktop development with C++" workload must be selected.
-
-5. IIS Deployment Configuration
-Deploying this application under IIS requires several non-default configurations.
-
-a) Application Pool Identity
-The application cannot run under the default ApplicationPoolIdentity.
-
-The Application Pool must be configured to run as a Custom account.
-
-This account should ideally be a dedicated domain service account (e.g., DOMAIN\svc_QAReviewer) that has been granted the necessary permissions.
-
-b) Server & Network Permissions
-The account running the Application Pool needs the following permissions:
-
-On the Web Server: It must be granted the "Log on as a batch job" right in the Local Security Policy (secpol.msc).
-
-On the Network Share: It must have Read permissions on the call recording folder (e.g., \\gts-3cx2016-az\recordings).
-
-On the Application Folders: It must have Modify permissions on the uploads and models_cache subfolders within the main application directory (C:\inetpub\wwwroot\qa_review_app\) to allow it to save temporary files and download AI models.
-
-c) web.config
-A web.config file is required in the root of the application directory to interface with IIS.
-
-<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <system.webServer>
-    <handlers>
-      <add name="Python FastCGI" 
-           path="*" 
-           verb="*" 
-           modules="FastCgiModule" 
-           scriptProcessor="C:\inetpub\wwwroot\qa_review_app\venv\Scripts\python.exe|C:\inetpub\wwwroot\qa_review_app\venv\Lib\site-packages\wfastcgi.py" 
-           resourceType="Unspecified" 
-           requireAccess="Script" />
-    </handlers>
-  </system.webServer>
-
-  <appSettings>
-    <!-- Points to your Flask app object: <filename>.<app_object_name> -->
-    <add key="WSGI_HANDLER" value="app.app" />
-    
-    <!-- The root of your application -->
-    <add key="PYTHONPATH" value="C:\inetpub\wwwroot\qa_review_app" />
-    
-    <!-- Optional: A log file for wfastcgi debugging -->
-    <add key="WSGI_LOG" value="C:\inetpub\wwwroot\qa_review_app\wfastcgi.log" />
-  </appSettings>
-</configuration>
-
-6. Usage
-Main QA Application
-To run the main application for development purposes:
-
-# Navigate to the project directory
-cd C:\inetpub\wwwroot\qa_review_app
-# Activate the virtual environment
-venv\Scripts\activate
-# Run the app
+```sh
 python app.py
+```
 
-The application will be available at http://127.0.0.1:5000.
+The application will be accessible at `http://127.0.0.1:5000`.
 
-Review Deletion Tool
-To run the administrative tool for deleting test reviews:
+### Production
 
-# Navigate to the project directory
-cd C:\inetpub\wwwroot\qa_review_app
-# Activate the virtual environment
-venv\Scripts\activate
-# Run the deleter app
-python the_deleter.py
+The application is configured to run on a production server using IIS and wfastcgi. Ensure your `web.config` file is correctly set up to point to your Python installation and the `app.py` file. Any changes to configuration or Python files will require an **IIS Application Pool Recycle** to take effect.
 
-This tool runs on a different port and will be available at http://127.0.0.1:5001.
+## Key Modules
+
+  * **`app.py`**: The main Flask application. Defines all URL routes and API endpoints.
+  * **`database.py`**: Handles all database connections and queries for the Ticket QA and ConnectWise systems.
+  * **`phone_qa_db.py`**: Handles all database connections and queries for the Phone Call QA system.
+  * **`tech_scorecard.py`**: A class that orchestrates the data collection and aggregation for the Performance Scorecard page.
+  * **`ticket_analyzer.py`**: Contains the logic for the AI-powered ticket documentation analysis feature.
+  * **`call_processor.py`**: Contains the logic for transcribing and analyzing audio files.
+  * **`config_manager.py`**: A simple utility for reading settings from `Config.ini`.
